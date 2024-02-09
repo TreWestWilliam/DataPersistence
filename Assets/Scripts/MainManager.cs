@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,7 +13,10 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+
+    public Text HighScoreText;
+    public int m_HighScore;
+
     private bool m_Started = false;
     private int m_Points;
     
@@ -36,6 +40,8 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        LoadHighscore();
     }
 
     private void Update()
@@ -66,6 +72,10 @@ public class MainManager : MonoBehaviour
     {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
+        if (m_Points > m_HighScore) 
+        {
+            SaveHighscore();
+        }
     }
 
     public void GameOver()
@@ -73,4 +83,45 @@ public class MainManager : MonoBehaviour
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    public void SaveHighscore() 
+    {
+        if (Names.UsersName.Equals("")) 
+        {
+            Names.UsersName = "Nanashi";
+        }
+        HighScore hs = new();
+        hs.ScoreName = Names.UsersName;
+        hs.ScoreNumber = m_Points;
+
+        string json = JsonUtility.ToJson(hs);
+
+        File.WriteAllText(Application.persistentDataPath + "/highscore.json", json);
+    }
+
+    public void LoadHighscore() 
+    {
+        HighScore hs = new();
+        string path = Application.persistentDataPath + "/highscore.json";
+        if (File.Exists(path))
+        {
+            string JsonString = File.ReadAllText(path);
+            hs = JsonUtility.FromJson<HighScore>(JsonString);
+        }
+        else 
+        {
+            hs.ScoreName = "None";
+            hs.ScoreNumber = 0;
+        }
+
+        HighScoreText.text = $"Best Score: {hs.ScoreNumber} By {hs.ScoreName}";
+        m_HighScore = hs.ScoreNumber;
+    }
+}
+
+[System.Serializable]
+struct HighScore 
+{
+    public string ScoreName;
+    public int ScoreNumber;
 }
